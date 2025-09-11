@@ -30,9 +30,6 @@ using System.Text;
 
 public class RunWhisper : MonoBehaviour
 {
-    
-    [SerializeField] ModelAsset encoderModel, decoderModel, spectroModel;
-    
     IWorker decoderEngine, encoderEngine, spectroEngine;
 
     const BackendType backend = BackendType.GPUCompute;
@@ -82,13 +79,12 @@ public class RunWhisper : MonoBehaviour
 
         GetTokens();
 
-        Model encoder = ModelLoader.Load(encoderModel);
-        Model decoder = ModelLoader.Load(decoderModel);
-        Model spectro = ModelLoader.Load(spectroModel);
+        Model decoder = ModelLoader.Load(Application.streamingAssetsPath + "/AudioDecoder_Tiny.sentis");
+        Model encoder = ModelLoader.Load(Application.streamingAssetsPath + "/AudioEncoder_Tiny.sentis");
+        Model spectro = ModelLoader.Load(Application.streamingAssetsPath + "/LogMelSepctro.sentis");
 
         decoderEngine = WorkerFactory.CreateWorker(backend, decoder);
         encoderEngine = WorkerFactory.CreateWorker(backend, encoder);
-        
         spectroEngine = WorkerFactory.CreateWorker(backend, spectro);
 
         
@@ -188,16 +184,14 @@ public class RunWhisper : MonoBehaviour
             }
             else if (ID >= tokens.Length)
             {
-                // outputString += $"(time={(ID - START_TIME) * 0.02f})";
+                outputString += $"(time={(ID - START_TIME) * 0.02f})";
                 speechRecognitionController.onResponse.Invoke(outputString);
             }
             else outputString += GetUnicodeText(tokens[ID]);
 
-            // Debug.Log(outputString);
+            Debug.Log(outputString);
         }
     }
-
-
 
     // Translates encoded special characters to Unicode
     string GetUnicodeText(string text)
@@ -227,7 +221,7 @@ public class RunWhisper : MonoBehaviour
 
     bool IsWhiteSpace(char c)
     {
-        return !(('!' <= c && c <= '~') || ('ï¿½' <= c && c <= 'ï¿½') || ('ï¿½' <= c && c <= 'ï¿½'));
+        return !(('!' <= c && c <= '~') || ('¡' <= c && c <= '¬') || ('®' <= c && c <= 'ÿ'));
     }
 
     private void OnDestroy()
