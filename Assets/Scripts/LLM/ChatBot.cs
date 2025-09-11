@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using LLMUnity;
+using UnityEngine.UI;
 
 namespace LLMUnitySamples
 {
@@ -18,8 +19,7 @@ namespace LLMUnitySamples
         public float textPadding = 10f;
         public float bubbleSpacing = 10f;
         public Sprite sprite;
-
-        [SerializeField] private GameObject inputBlocker;
+        public Button stopButton;
 
         private InputBubble inputBubble;
         private List<Bubble> chatBubbles = new List<Bubble>();
@@ -53,12 +53,22 @@ namespace LLMUnitySamples
             inputBubble.AddSubmitListener(onInputFieldSubmit);
             inputBubble.AddValueChangedListener(onValueChanged);
             inputBubble.setInteractable(false);
+            stopButton.gameObject.SetActive(true);
+            ShowLoadedMessages();
             _ = llmCharacter.Warmup(WarmUpCallback);
         }
 
-        public void SubmitVoiceCommand(string message) {
-            inputBubble.SetText(message);
-            onInputFieldSubmit(message);
+        Bubble AddBubble(string message, bool isPlayerMessage)
+        {
+            Bubble bubble = new Bubble(chatContainer, isPlayerMessage? playerUI: aiUI, isPlayerMessage? "PlayerBubble": "AIBubble", message);
+            chatBubbles.Add(bubble);
+            bubble.OnResize(UpdateBubblePositions);
+            return bubble;
+        }
+
+        void ShowLoadedMessages()
+        {
+            for (int i=1; i<llmCharacter.chat.Count; i++) AddBubble(llmCharacter.chat[i].content, i%2==1);
         }
 
         void onInputFieldSubmit(string newText)
@@ -73,20 +83,14 @@ namespace LLMUnitySamples
             // replace vertical_tab
             string message = inputBubble.GetText().Replace("\v", "\n");
 
-            
-            Bubble playerBubble = new Bubble(chatContainer, playerUI, "PlayerBubble", message);
-            Bubble aiBubble = new Bubble(chatContainer, aiUI, "AIBubble", "...");
-            chatBubbles.Add(playerBubble);
-            chatBubbles.Add(aiBubble);
-            playerBubble.OnResize(UpdateBubblePositions);
-            aiBubble.OnResize(UpdateBubblePositions);
-
+            AddBubble(message, true);
+            Bubble aiBubble = AddBubble("...", false);
             Task chatTask = llmCharacter.Chat(message, aiBubble.SetText, AllowInput);
             inputBubble.SetText("");
         }
 
-        public void WarmUpCallback() {
-            inputBlocker.SetActive(false);
+        public void WarmUpCallback()
+        {
             warmUpDone = true;
             inputBubble.SetPlaceHolderText("Message me");
             AllowInput();
