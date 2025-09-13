@@ -9,7 +9,7 @@ using System.Text;
 
 public class RunWhisper : MonoBehaviour
 {
-    Worker decoderEngine, encoderEngine, spectroEngine;
+    IWorker decoderEngine, encoderEngine, spectroEngine;
     const BackendType backend = BackendType.GPUCompute;
 
     public AudioClip audioClip;
